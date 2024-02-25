@@ -24,10 +24,35 @@
 @tool
 extends RefCounted
 class_name MaterialGroup
-	
-var name:String
-var children:Array[MaterialGroup]
 
-func _init(name:String = ""):
-	self.name = name
+class Tier:
+	var name:String
+	var children:Array[MaterialGroup]
+
+	func _init(name:String = ""):
+		self.name = name
+		
+	func create_child_with_name(name:String)->Tier:
+		var child:Tier = Tier.new(name)
+		children.append(child)
+		return child
+
+	func get_child_with_name(name:String):
+		for child in children:
+			if child.name == name:
+				return child
+		return null
+
+	func get_child_index_with_name(name:String)->int:
+		for i in children.size():
+			if children[i].name == name:
+				return i
+		return -1
+
+	func remove_child_with_name(name:String):
+		var idx:int = get_child_index_with_name(name)
+		if idx > -1:
+			children.remove_at(idx)
+
+var root:Tier = Tier.new("Any")
 	
