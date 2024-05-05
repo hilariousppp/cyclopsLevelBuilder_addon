@@ -1,29 +1,6 @@
-# MIT License
-#
-# Copyright (c) 2023 Mark McKay
-# https://github.com/blackears/cyclopsLevelBuilder
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-
 @tool
-extends Resource
-class_name MeshVectorData
+extends CyclopsRecord
+class_name CyclopsMeshRecord
 
 
 @export var selected:bool = false
@@ -37,11 +14,10 @@ class_name MeshVectorData
 @export var num_faces:int
 @export var num_face_vertices:int
 
-@export var active_vertex:int
-@export var active_edge:int
-@export var active_face:int
-@export var active_face_vertex:int
-
+#@export var vertex_data:Array[DataVector]
+#@export var edge_data:Array[DataVector]
+#@export var face_data:Array[DataVector]
+#@export var face_vertex_data:Array[DataVector]
 
 @export var edge_vertex_indices:PackedInt32Array
 @export var edge_face_indices:PackedInt32Array
@@ -49,10 +25,10 @@ class_name MeshVectorData
 @export var face_vertex_count:PackedInt32Array #Number of verts in each face
 @export var face_vertex_indices:PackedInt32Array #Vertex index per face
 
-var vertex_data:Dictionary
-var edge_data:Dictionary
-var face_data:Dictionary
-var face_vertex_data:Dictionary
+@export var active_vertex:int
+@export var active_edge:int
+@export var active_face:int
+@export var active_face_vertex:int
 
 const V_POSITION: StringName = "position"
 const V_SELECTED: StringName = "selected"
@@ -74,6 +50,10 @@ const FV_COLOR: StringName = "color"
 const FV_UV1: StringName = "uv1"
 const FV_UV2: StringName = "uv2"
 
+var vertex_data:Dictionary
+var edge_data:Dictionary
+var face_data:Dictionary
+var face_vertex_data:Dictionary
 
 func create_from_convex_block(block_data:ConvexBlockData):
 
@@ -121,11 +101,6 @@ func create_from_convex_block(block_data:ConvexBlockData):
 
 	
 	#Create face-vertex data
-	edge_vertex_indices = block_data.edge_vertex_indices
-	edge_face_indices = block_data.edge_face_indices
-	face_vertex_count = block_data.face_vertex_count
-	face_vertex_indices = block_data.face_vertex_indices
-	
 	num_face_vertices = 0
 	for n in block_data.face_vertex_count:
 		num_face_vertices += n
@@ -134,21 +109,19 @@ func create_from_convex_block(block_data:ConvexBlockData):
 	var next_fv_idx:int = 0
 	var face_indices:PackedInt32Array
 	var vert_indices:PackedInt32Array
-
-#@export var edge_vertex_indices:PackedInt32Array
-#@export var edge_face_indices:PackedInt32Array
-#
-#@export var face_vertex_count:PackedInt32Array #Number of verts in each face
-#@export var face_vertex_indices:PackedInt32Array #Vertex index per face
-
+	#var fv_local_indices:PackedInt32Array
+	#var fv_coord_map:Dictionary
 	
 	for f_idx in block_data.face_vertex_count.size():
 		var num_verts_in_face:int = block_data.face_vertex_count[f_idx]
 		for fv_local_idx in num_verts_in_face:
 			var v_idx:int = block_data.face_vertex_indices[fv_array_offset + fv_local_idx]
 			
+			#var fv_coord:Vector2i = Vector2i(f_idx, fv_local_idx)
+			#fv_coord_map[fv_coord] = face_indices
 			face_indices.append(f_idx)
 			vert_indices.append(v_idx)
+			#fv_local_indices.append(fv_local_idx)
 			
 		fv_array_offset += num_verts_in_face
 	
@@ -180,8 +153,6 @@ func create_from_convex_block(block_data:ConvexBlockData):
 
 
 func set_vertex_data(data_vector:DataVector):
-	#print("set_vertex_data ", var_to_str(data_vector))
-	#print("data_vector.name ", data_vector.name)
 	vertex_data[data_vector.name] = data_vector
 
 func set_edge_data(data_vector:DataVector):
@@ -195,7 +166,6 @@ func set_face_vertex_data(data_vector:DataVector):
 
 func validate()->bool:
 	return true
-	
 
 func create_vector_xml_node(name:String, type:String, value:String)->XMLElement:
 	var evi_ele:XMLElement = XMLElement.new("vector")
